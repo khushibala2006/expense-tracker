@@ -77,8 +77,6 @@ expenseList.addEventListener("click", function (e) {
     if (e.target.classList.contains("delete-btn")) {
         const index = e.target.dataset.index;
 
-
-        // Remove the expense from the array
         expenses.splice(index, 1);
 
         saveData();
@@ -226,49 +224,74 @@ currency.addEventListener("change", convertCurrency);
 async function convertCurrency() {
 
     const targetCurrency = currency.value;
-    const { totalExpenses, remainingBalance } = getFinancials();
+    const fromCurrency = "INR";
+
+    const { remainingBalance } = getFinancials();
 
     if (targetCurrency === "INR") {
+
         salaryDisplay.textContent = `₹${remainingBalance}`;
 
         expenseList.innerHTML = "";
+
         expenses.forEach((expense, index) => {
+
             const li = document.createElement("li");
+
             li.innerHTML = `
                 ${expense.name} - ₹${expense.amount}
                 <button class="delete-btn" data-index="${index}">Delete</button>
             `;
+
             expenseList.appendChild(li);
         });
+
         return;
     }
 
     try {
+
         const response = await fetch(
-            `https://api.frankfurter.app/latest?from=INR&to=${targetCurrency}`
+            `https://open.er-api.com/v6/latest/${fromCurrency}`
         );
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch exchange rate");
+        }
+
         const data = await response.json();
+
         const rate = data.rates[targetCurrency];
 
         if (!rate) {
-            salaryDisplay.textContent = "Error fetching rate.";
+            salaryDisplay.textContent = "Exchange rate not available";
             return;
         }
 
-        salaryDisplay.textContent = formatCurrency(remainingBalance, targetCurrency, rate);
-
+        salaryDisplay.textContent = formatCurrency(
+            remainingBalance,
+            targetCurrency,
+            rate
+        );
 
         expenseList.innerHTML = "";
+
         expenses.forEach((expense, index) => {
+
             const li = document.createElement("li");
+
             li.innerHTML = `
                 ${expense.name} - ${formatCurrency(expense.amount, targetCurrency, rate)}
                 <button class="delete-btn" data-index="${index}">Delete</button>
             `;
+
             expenseList.appendChild(li);
         });
+
     } catch (error) {
+
         salaryDisplay.textContent = "API Error";
+
         console.error("Currency conversion error:", error);
     }
 }
