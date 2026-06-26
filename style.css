@@ -1,0 +1,90 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+#total-salary,
+#expense-name,
+#expense-amount {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: darkgreen;
+}
+
+#expenseList {
+    list-style: none;
+    margin-top: 20px;
+}
+
+#expenseList li {
+    background-color: white;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 5px solid green;
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+h3 {
+    margin-top: 20px;
+    text-align: center;
+    background-color: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+#salaryDisplay {
+    color: green;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+#error-message {
+    color: red;
+    margin-top: 10px;
+}
+canvas {
+    max-width: 350px;
+    margin: 30px auto;
+    display: block;
+}
+#warning{
+    color:red;
+    font-weight:bold;
+    text-align:center;
+    margin:15px;
+}
