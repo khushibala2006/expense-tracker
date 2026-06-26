@@ -118,56 +118,28 @@ function getFinancials() {
 }
 
 function formatCurrency(amount, currency, rate = 1) {
-    const convertedAmount = (amount * rate).toFixed(2);
-    if (currency === "USD") return `$${convertedAmount}`;
-    return `₹${amount}`; // Default to INR
+    const convertedAmount = (amount * rate);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(convertedAmount);
 }
 
 function renderExpenses() {
-
     expenseList.innerHTML = "";
 
-    expenses.forEach((expense, index) => {
-
-        const li = document.createElement("li");
-
-        li.innerHTML = `
-            ${expense.name} - ₹${expense.amount}
-            <button class="delete-btn"
-                data-index="${index}">
-                Delete
-            </button>
-        `;
-
-        expenseList.appendChild(li);
-    });
-
-    const { remainingBalance } = getFinancials();
+    const { remainingBalance, totalExpenses } = getFinancials();
 
     document.getElementById("total-salary").value = totalSalary;
 
-    salaryDisplay.textContent = `₹${remainingBalance}`;
+    convertCurrency(); // Use convertCurrency to render with the correct currency
 
     updateChart();
     const warning = document.getElementById("warning");
-
-if (remainingBalance <= totalSalary * 0.10) {
-
-    salaryDisplay.style.color = "red";
-
-    warning.textContent =
-
-        "⚠ Warning! Balance is below 10%";
-
-}
-
-else{
-
-    salaryDisplay.style.color = "green";
-
-    warning.textContent = "";
-
-}
+    if (totalSalary > 0 && (remainingBalance / totalSalary) <= 0.10) {
+        salaryDisplay.style.color = "red";
+        warning.textContent = "⚠ Warning! Balance is below 10%";
+    } else {
+        salaryDisplay.style.color = "green";
+        warning.textContent = "";
+    }
 }
 const downloadBtn = document.getElementById("download-btn");
 
@@ -185,32 +157,31 @@ downloadBtn.addEventListener("click", function () {
     y += 15;
 
     doc.setFontSize(12);
-    doc.text(`Total Salary: ₹${totalSalary}`, 20, y);
+    const selectedCurrency = currency.value;
+    const financials = getFinancials();
+    const totalSalaryText = `Total Salary: ${formatCurrency(totalSalary, selectedCurrency, 1)}`;
+    doc.text(totalSalaryText, 20, y);
 
     y += 10;
 
     let totalExpenses = 0;
+    const rate = window.currentExchangeRate || 1; // Use globally stored rate
 
     expenses.forEach((expense) => {
-
         doc.text(
-            `${expense.name} - ₹${expense.amount}`,
+            `${expense.name} - ${formatCurrency(expense.amount, selectedCurrency, rate)}`,
             20,
             y
         );
-
         totalExpenses += expense.amount;
-
         y += 10;
     });
 
     const remainingBalance =
         totalSalary - totalExpenses;
 
-    y += 10;
-
     doc.text(
-        `Remaining Balance: ₹${remainingBalance}`,
+        `Remaining Balance: ${formatCurrency(remainingBalance, selectedCurrency, 1)}`,
         20,
         y
     );
@@ -221,39 +192,28 @@ const currency = document.getElementById("currency");
 
 currency.addEventListener("change", convertCurrency);
 
+window.currentExchangeRate = 1; // Global variable to store the rate
+
 async function convertCurrency() {
 
     const targetCurrency = currency.value;
     const fromCurrency = "INR";
 
-    const { remainingBalance } = getFinancials();
+    const { remainingBalance, totalExpenses } = getFinancials();
 
-    if (targetCurrency === "INR") {
-
-        salaryDisplay.textContent = `₹${remainingBalance}`;
-
-        expenseList.innerHTML = "";
-
-        expenses.forEach((expense, index) => {
-
-            const li = document.createElement("li");
-
-            li.innerHTML = `
-                ${expense.name} - ₹${expense.amount}
-                <button class="delete-btn" data-index="${index}">Delete</button>
-            `;
-
-            expenseList.appendChild(li);
-        });
-
-        return;
+    if (targetCurrency === fromCurrency) {
+        window.currentExchangeRate = 1;
+        salaryDisplay.textContent = formatCurrency(remainingBalance, fromCurrency);
+        renderExpenseList(fromCurrency);
+        return; // Exit if no conversion is needed
     }
 
     try {
-
         const response = await fetch(
-            `https://open.er-api.com/v6/latest/${fromCurrency}`
-        );
+
+    `https://open.er-api.com/v6/latest/${fromCurrency}`
+
+);
 
         if (!response.ok) {
             throw new Error("Failed to fetch exchange rate");
@@ -262,6 +222,7 @@ async function convertCurrency() {
         const data = await response.json();
 
         const rate = data.rates[targetCurrency];
+        window.currentExchangeRate = rate; // Store the rate globally
 
         if (!rate) {
             salaryDisplay.textContent = "Exchange rate not available";
@@ -274,24 +235,21 @@ async function convertCurrency() {
             rate
         );
 
-        expenseList.innerHTML = "";
-
-        expenses.forEach((expense, index) => {
-
-            const li = document.createElement("li");
-
-            li.innerHTML = `
-                ${expense.name} - ${formatCurrency(expense.amount, targetCurrency, rate)}
-                <button class="delete-btn" data-index="${index}">Delete</button>
-            `;
-
-            expenseList.appendChild(li);
-        });
-
+        renderExpenseList(targetCurrency, rate);
     } catch (error) {
-
         salaryDisplay.textContent = "API Error";
 
         console.error("Currency conversion error:", error);
     }
+}
+
+function renderExpenseList(currency, rate = 1) {
+    expenseList.innerHTML = "";
+    expenses.forEach((expense, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            ${expense.name} - ${formatCurrency(expense.amount, currency, rate)}
+            <button class="delete-btn" data-index="${index}">Delete</button>`;
+        expenseList.appendChild(li);
+    });
 }
